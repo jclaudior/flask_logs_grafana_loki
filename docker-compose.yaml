@@ -1,0 +1,46 @@
+version: "3.7"
+
+name: logger_sample
+
+services:
+  flask_server:
+    build: ./server
+    container_name: flask_server
+    image: flask_server
+    volumes:
+      - ./server:/flask_server
+    ports:
+      - 7007:7007
+    command: python server.py
+    environment:
+      MONGO_ADDRESS: 'mongodb://mongodb:27017'
+      DATABASE: 'logger_sample_db'
+  loki:
+    image: grafana/loki:2.6.1
+    ports:
+      - "3100"
+    volumes:
+      - ./volumes/loki:/loki
+  promtail:
+    image: grafana/promtail:2.6.1
+    volumes:
+      - ./loki/promtail-config.yaml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /var/lib/docker/containers:/var/lib/docker/containers
+  grafana:
+    image: grafana/grafana:9.2.2
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./volumes/grafana:/var/lib/grafana
+      - ./loki/grafana/provisioning/:/etc/grafana/provisioning/
+  mongodb:
+    container_name: mongodb
+    image: mongo:4.2
+    ports:
+      - '27017:27017'
+    volumes:
+      - ./mongodb_docker:/data/db
+
+
+  
